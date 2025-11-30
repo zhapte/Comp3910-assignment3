@@ -602,4 +602,10 @@ public class TimeSheetRepo implements TimesheetCollection, Serializable {
         }
         return out;
     }
+	
+	// Expose the DB id for a given Timesheet so REST can build URLs.
+	public Long getIdFor(final Timesheet ts) {
+		return timesheetIds.get(ts);
+	}
+
 }
