@@ -1,5 +1,173 @@
 package com.corejsf;
 
-public class EmployeeManager {
+import ca.bcit.infosys.employee.Employee;
+import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
+import java.util.List;
+
+/**
+ * Server-side implementation of EmployeeService.
+ *
+ */
+@Dependent
+@Stateless
+public class EmployeeManager implements EmployeeService {
+
+    @Inject
+    private EmployeeRepo employeeRepo;
+
+    @Inject
+    private AuthTokenStore tokenStore;
+
+    @Inject
+    private AuthService authService;
+
+    // Helper methods 
+
+    /**
+     * Validates the Authorization header, resolves the employee from the token,
+     * or throws a 401 if invalid / missing.
+     */
+    private Employee requireUser(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(new ErrorDto("Missing or invalid Authorization header"))
+                            .build());
+        }
+
+        String token = authHeader.substring("Bearer ".length()).trim();
+        Employee emp = tokenStore.getEmployeeForToken(token);
+        if (emp == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(new ErrorDto("Invalid or expired token"))
+                            .build());
+        }
+        return emp;
+    }
+
+    /**
+     * Validates that the caller is an authenticated admin user.
+     */
+    private Employee requireAdmin(String authHeader) {
+        Employee caller = requireUser(authHeader);
+        if (!authService.isAdmin(caller)) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.FORBIDDEN)
+                            .entity(new ErrorDto("Admin privileges required"))
+                            .build());
+        }
+        return caller;
+    }
+
+    /**
+     * Utility: find by empNumber by scanning the list from EmployeeRepo.
+     */
+    private Employee findByEmpNumberInternal(int empNumber) {
+        for (Employee e : employeeRepo.getEmployees()) {
+            if (e.getEmpNumber() == empNumber) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    // EmployeeService API 
+
+    @Override
+    public Employee findByEmpNumber(String authHeader, int empNumber) {
+        // Any logged-in user is allowed to read
+        requireUser(authHeader);
+
+        Employee e = findByEmpNumberInternal(empNumber);
+        if (e == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND)
+                            .entity(new ErrorDto("Employee not found: " + empNumber))
+                            .build());
+        }
+        return e;
+    }
+
+    @Override
+    public Employee findByUserName(String authHeader, String userName) {
+        requireUser(authHeader);
+
+        Employee e = employeeRepo.getEmployee(userName);
+        if (e == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND)
+                            .entity(new ErrorDto("Employee not found: " + userName))
+                            .build());
+        }
+        return e;
+    }
+
+    @Override
+    public List<Employee> getAll(String authHeader) {
+        requireUser(authHeader);
+        return employeeRepo.getEmployees();
+    }
+
+    @Override
+    public void persist(String authHeader, Employee employee) {
+        requireAdmin(authHeader);
+
+        if (employee == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ErrorDto("Employee payload must not be null"))
+                            .build());
+        }
+
+        // Delegate to your existing repo, which enforces unique username + empNumber
+        employeeRepo.addEmployee(employee);
+    }
+
+    @Override
+    public void merge(String authHeader, Employee employee) {
+        requireAdmin(authHeader);
+
+        if (employee == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ErrorDto("Employee payload must not be null"))
+                            .build());
+        }
+
+
+        Employee existing = findByEmpNumberInternal(employee.getEmpNumber());
+        if (existing != null) {
+            employeeRepo.deleteEmployee(existing);
+        }
+        employeeRepo.addEmployee(employee);
+    }
+
+    @Override
+    public void remove(String authHeader, int empNumber) {
+        Employee caller = requireAdmin(authHeader);
+
+        Employee toDelete = findByEmpNumberInternal(empNumber);
+        if (toDelete == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND)
+                            .entity(new ErrorDto("Employee not found: " + empNumber))
+                            .build());
+        }
+
+       
+        if (caller.getEmpNumber() == empNumber) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ErrorDto("Admins cannot delete themselves"))
+                            .build());
+        }
+
+        employeeRepo.deleteEmployee(toDelete);
+    }
 }

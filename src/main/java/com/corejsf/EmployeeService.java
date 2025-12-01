@@ -4,6 +4,7 @@ import ca.bcit.infosys.employee.Employee;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -11,53 +12,68 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import java.util.List;
+
+/**
+ * REST API for managing employees.
+ *
+ */
 @Path("/employees")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public interface EmployeeService {
-    
+
     /**
-     * Return all employees in the system
-     * @return an array of employees as JSON
+     * Finds an employee by empNumber.
+     *
      */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    Employee[] getAll();
-    
-    /** Get employee by employee number */
-    @GET
-    @Path("/{empNumber}")
-    @Produces(MediaType.APPLICATION_JSON)
-    Employee findByEmpNumber(@PathParam("empNumber") int empNumber);
-    
-    /** Get employee by user name */
-    @GET
-    @Path("/username/{userName}")
-    @Produces(MediaType.APPLICATION_JSON)
-    Employee findByUserName(@PathParam("userName") String userName);
-    
+    @Path("{empNumber}")
+    Employee findByEmpNumber(
+            @HeaderParam("Authorization") String authHeader,
+            @PathParam("empNumber") int empNumber);
+
     /**
-     * Create a new employee
+     * Finds an employee by username (case-insensitive).
+     *
+     */
+    @GET
+    @Path("by-username/{userName}")
+    Employee findByUserName(
+            @HeaderParam("Authorization") String authHeader,
+            @PathParam("userName") String userName);
+
+    /**
+     * Returns all employees in the system.
+     *
+     */
+    @GET
+    List<Employee> getAll(
+            @HeaderParam("Authorization") String authHeader);
+
+    /**
+     * Creates a new employee.
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    void persist(Employee employee);
-    
+    void persist(
+            @HeaderParam("Authorization") String authHeader,
+            Employee employee);
+
     /**
-     * Update an existing employee
+     * Updates an existing employee (by empNumber).
      */
     @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    void merge(Employee employee);
-    
-    
-    /** Delete an employee by employee number */
-    @DELETE
-    @Path("/{empNumber}")
-    void remove(@PathParam("empNumber") int empNumber);
-    
-    
-    
-    
-    
-    
+    void merge(
+            @HeaderParam("Authorization") String authHeader,
+            Employee employee);
 
+    /**
+     * Deletes an employee by empNumber.
+     *
+     */
+    @DELETE
+    @Path("{empNumber}")
+    void remove(
+            @HeaderParam("Authorization") String authHeader,
+            @PathParam("empNumber") int empNumber);
 }
