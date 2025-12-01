@@ -1,5 +1,5 @@
 build:
-  uri: https://gitlab.infoteach.ca/liul/assignment2.git
+  uri: https://gitlab.infoteach.ca/liul/assignment3.git
   mode: s2i
   ref: main
   sourceSecret: gitlabpulling

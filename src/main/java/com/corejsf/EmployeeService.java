@@ -11,6 +11,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.Map;
 
 import java.util.List;
 
@@ -59,13 +60,6 @@ public interface EmployeeService {
             @HeaderParam("Authorization") String authHeader,
             Employee employee);
 
-    /**
-     * Updates an existing employee (by empNumber).
-     */
-    @PUT
-    void merge(
-            @HeaderParam("Authorization") String authHeader,
-            Employee employee);
 
     /**
      * Deletes an employee by empNumber.
@@ -76,4 +70,26 @@ public interface EmployeeService {
     void remove(
             @HeaderParam("Authorization") String authHeader,
             @PathParam("empNumber") int empNumber);
+			
+	
+	/**
+	* Reset password to default ("password") – admin only.
+	*/
+	@POST
+	@Path("{userName}/reset-password")
+	void resetPassword(
+			@HeaderParam("Authorization") String authHeader,
+			@PathParam("userName") String userName);
+	
+	/**
+	* Change password of the specified user.
+	*
+	* Server enforces: only the logged-in user can change their own password.
+	*/
+	@PUT
+	@Path("{userName}/password")
+	void changePassword(
+			@HeaderParam("Authorization") String authHeader,
+			@PathParam("userName") String userName,
+			Map<String, String> body);
 }

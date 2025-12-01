@@ -6,6 +6,7 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import java.util.Map;
 
 import java.util.List;
 
@@ -81,8 +82,7 @@ public class EmployeeManager implements EmployeeService {
 
     @Override
     public Employee findByEmpNumber(String authHeader, int empNumber) {
-        // Any logged-in user is allowed to read
-        requireUser(authHeader);
+        requireAdmin(authHeader);
 
         Employee e = findByEmpNumberInternal(empNumber);
         if (e == null) {
@@ -96,7 +96,7 @@ public class EmployeeManager implements EmployeeService {
 
     @Override
     public Employee findByUserName(String authHeader, String userName) {
-        requireUser(authHeader);
+        requireAdmin(authHeader);
 
         Employee e = employeeRepo.getEmployee(userName);
         if (e == null) {
@@ -110,7 +110,7 @@ public class EmployeeManager implements EmployeeService {
 
     @Override
     public List<Employee> getAll(String authHeader) {
-        requireUser(authHeader);
+        requireAdmin(authHeader);
         return employeeRepo.getEmployees();
     }
 
@@ -129,24 +129,6 @@ public class EmployeeManager implements EmployeeService {
         employeeRepo.addEmployee(employee);
     }
 
-    @Override
-    public void merge(String authHeader, Employee employee) {
-        requireAdmin(authHeader);
-
-        if (employee == null) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.BAD_REQUEST)
-                            .entity(new ErrorDto("Employee payload must not be null"))
-                            .build());
-        }
-
-
-        Employee existing = findByEmpNumberInternal(employee.getEmpNumber());
-        if (existing != null) {
-            employeeRepo.deleteEmployee(existing);
-        }
-        employeeRepo.addEmployee(employee);
-    }
 
     @Override
     public void remove(String authHeader, int empNumber) {
@@ -170,4 +152,60 @@ public class EmployeeManager implements EmployeeService {
 
         employeeRepo.deleteEmployee(toDelete);
     }
+	
+	@Override
+	public void resetPassword(String authHeader, String userName) {
+		requireAdmin(authHeader);
+	
+		if (userName == null || userName.isBlank()) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.BAD_REQUEST)
+							.entity(new ErrorDto("userName must not be blank"))
+							.build());
+		}
+	
+		Employee e = employeeRepo.getEmployee(userName);
+		if (e == null) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.NOT_FOUND)
+							.entity(new ErrorDto("User not found: " + userName))
+							.build());
+		}
+	
+		employeeRepo.changePassword(userName, "password");
+	}
+
+	@Override
+	public void changePassword(String authHeader,
+							String userName,
+							Map<String, String> body) {
+		Employee caller = requireUser(authHeader);
+	
+		// only allow self-change (or add admin override if you want)
+		if (!caller.getUserName().equalsIgnoreCase(userName)) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.FORBIDDEN)
+							.entity(new ErrorDto("You can only change your own password"))
+							.build());
+		}
+	
+		if (body == null || !body.containsKey("password")) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.BAD_REQUEST)
+							.entity(new ErrorDto("Missing 'password' in request body"))
+							.build());
+		}
+	
+		String newPassword = body.get("password");
+		if (newPassword == null || newPassword.isBlank()) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.BAD_REQUEST)
+							.entity(new ErrorDto("Password must not be blank"))
+							.build());
+		}
+	
+		employeeRepo.changePassword(userName, newPassword);
+	}
+
+
 }
