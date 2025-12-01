@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html">
+<h:head>
+    <title>Timesheet REST API Directory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        h1 { color: #333; }
+        .section { margin-top: 25px; }
+        ul { line-height: 1.8; }
+        code { background: #f0f0f0; padding: 2px 5px; border-radius: 4px; }
+        .admin { color: #a00; font-weight: bold; }
+    </style>
+</h:head>
+
+<h:body>
+
+    <h1>Timesheet REST API – Endpoint List</h1>
+    <p>This page lists all available REST endpoints for Assignment 3.</p>
+
+    <!-- Authentication -->
+    <div class="section">
+        <h2>Authentication</h2>
+        <ul>
+            <li><code>POST /api/login</code> — Login and receive token</li>
+            <li><code>POST /api/logout</code> — Logout (requires token)</li>
+            <li><code>GET /api/me</code> — Get current authenticated user</li>
+        </ul>
+    </div>
+
+    <!-- Users (Admin Only) -->
+    <div class="section">
+        <h2 class="admin">User Management (Admin Only)</h2>
+        <ul>
+            <li><code>GET /api/users</code> — List all employees</li>
+            <li><code>POST /api/users</code> — Create new user</li>
+            <li><code>DELETE /api/users/{username}</code> — Delete user</li>
+            <li><code>POST /api/users/{username}/reset-password</code> — Reset password</li>
+            <li><code>PUT /api/users/{username}/password</code> — Update password</li>
+        </ul>
+    </div>
+
+    <!-- Timesheets -->
+    <div class="section">
+        <h2>Timesheets</h2>
+        <ul>
+            <li><code>GET /api/timesheets</code> — Admin: all sheets, User: own sheets</li>
+            <li><code>GET /api/timesheets/{id}</code> — Load specific timesheet</li>
+            <li><code>POST /api/timesheets</code> — Create current week’s timesheet</li>
+            <li><code>PUT /api/timesheets/{id}</code> — Update timesheet</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Notes</h2>
+        <ul>
+            <li>All secured endpoints require header:<br/>
+                <code>Authorization: Bearer &lt;token&gt;</code>
+            </li>
+            <li>Use Postman or curl for testing.</li>
+        </ul>
+    </div>
+
+</h:body>
+</html>
