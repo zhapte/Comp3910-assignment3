@@ -58,7 +58,7 @@ public interface EmployeeService {
      * Creates a new employee.
      */
     @POST
-    void persist(
+    UserDto persist(
             @HeaderParam("Authorization") String authHeader,
             UserDto userDto);
 

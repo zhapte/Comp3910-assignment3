@@ -141,14 +141,13 @@ public class EmployeeManager implements EmployeeService {
 	
 		// Persist via your existing repo (enforces unique username/empNumber, sets role)
 		employeeRepo.addEmployee(emp);
-	
-		// Reload to get final empNumber/role from DB
 		Employee saved = employeeRepo.getEmployee(emp.getUserName());
 		if (saved == null) {
-			saved = emp; // fallback
+			saved = emp;
 		}
 	
 		return UserDto.fromEmployee(saved);
+	
 	}
 
 
