@@ -12,6 +12,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
+import com.corejsf.UserDto;
+
 
 import java.util.List;
 
@@ -58,7 +60,7 @@ public interface EmployeeService {
     @POST
     void persist(
             @HeaderParam("Authorization") String authHeader,
-            Employee employee);
+            UserDto userDto);
 
 
     /**

@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
+import com.corejsf.UserDto;
 
 import java.util.List;
 
@@ -115,19 +116,40 @@ public class EmployeeManager implements EmployeeService {
     }
 
     @Override
-    public void persist(String authHeader, Employee employee) {
-        requireAdmin(authHeader);
-
-        if (employee == null) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.BAD_REQUEST)
-                            .entity(new ErrorDto("Employee payload must not be null"))
-                            .build());
-        }
-
-        // Delegate to your existing repo, which enforces unique username + empNumber
-        employeeRepo.addEmployee(employee);
-    }
+	public UserDto persist(String authHeader, UserDto dto) {
+		// Admin-only
+		requireAdmin(authHeader);
+	
+		if (dto == null) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.BAD_REQUEST)
+							.entity(new ErrorDto("User payload must not be null"))
+							.build());
+		}
+		if (dto.getUserName() == null || dto.getUserName().isBlank()) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.BAD_REQUEST)
+							.entity(new ErrorDto("userName is required"))
+							.build());
+		}
+	
+		// Decide Admin vs User based on dto.isAdmin()
+		Employee emp = dto.isAdmin() ? new Admin() : new User();
+		emp.setName(dto.getName());
+		emp.setEmpNumber(dto.getEmpNumber());     // 0 = let repo assign
+		emp.setUserName(dto.getUserName().trim());
+	
+		// Persist via your existing repo (enforces unique username/empNumber, sets role)
+		employeeRepo.addEmployee(emp);
+	
+		// Reload to get final empNumber/role from DB
+		Employee saved = employeeRepo.getEmployee(emp.getUserName());
+		if (saved == null) {
+			saved = emp; // fallback
+		}
+	
+		return UserDto.fromEmployee(saved);
+	}
 
 
     @Override
