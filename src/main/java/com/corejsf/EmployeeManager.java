@@ -122,32 +122,37 @@ public class EmployeeManager implements EmployeeService {
 	
 		if (dto == null) {
 			throw new WebApplicationException(
-					Response.status(Response.Status.BAD_REQUEST)
-							.entity(new ErrorDto("User payload must not be null"))
-							.build());
+				Response.status(Response.Status.BAD_REQUEST)
+						.entity(new ErrorDto("User payload must not be null"))
+						.build());
 		}
 		if (dto.getUserName() == null || dto.getUserName().isBlank()) {
 			throw new WebApplicationException(
-					Response.status(Response.Status.BAD_REQUEST)
-							.entity(new ErrorDto("userName is required"))
-							.build());
+				Response.status(Response.Status.BAD_REQUEST)
+						.entity(new ErrorDto("userName is required"))
+						.build());
 		}
-	
-		// Decide Admin vs User based on dto.isAdmin()
+		if (dto.getName() == null || dto.getName().isBlank()) {
+			throw new WebApplicationException(
+				Response.status(Response.Status.BAD_REQUEST)
+						.entity(new ErrorDto("name is required"))
+						.build());
+		}
+		
 		Employee emp = dto.isAdmin() ? new Admin() : new User();
-		emp.setName(dto.getName());
-		emp.setEmpNumber(dto.getEmpNumber());     // 0 = let repo assign
+		emp.setName(dto.getName().trim());
 		emp.setUserName(dto.getUserName().trim());
-	
-		// Persist via your existing repo (enforces unique username/empNumber, sets role)
+		emp.setEmpNumber(dto.getEmpNumber());
+		
 		employeeRepo.addEmployee(emp);
+		
 		Employee saved = employeeRepo.getEmployee(emp.getUserName());
+		
 		if (saved == null) {
 			saved = emp;
 		}
-	
+		
 		return UserDto.fromEmployee(saved);
-	
 	}
 
 

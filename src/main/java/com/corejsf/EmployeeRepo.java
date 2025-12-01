@@ -104,6 +104,7 @@ public class EmployeeRepo implements EmployeeList{
         }
 
         int empNumber = (emp.getEmpNumber() == 0) ? nextEmpNumber() : emp.getEmpNumber();
+		emp.setEmpNumber(empNumber);
         String role = (emp instanceof Admin) ? "ADMIN" : "USER";
 
         String insertEmp = """
@@ -116,7 +117,6 @@ public class EmployeeRepo implements EmployeeList{
         """;
 
         try (Connection c = ds.getConnection()) {
-            c.setAutoCommit(false);
             long newEmployeeId;
 
             try (PreparedStatement ps = c.prepareStatement(insertEmp, Statement.RETURN_GENERATED_KEYS)) {
@@ -139,7 +139,7 @@ public class EmployeeRepo implements EmployeeList{
                 ps2.executeUpdate();
             }
 
-            c.commit();
+
         } catch (SQLException e) {
             throw new RuntimeException("addEmployee failed for " + emp.getUserName(), e);
         }
