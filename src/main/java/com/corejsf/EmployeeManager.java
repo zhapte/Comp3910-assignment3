@@ -14,6 +14,15 @@ import java.util.List;
 /**
  * Server-side implementation of EmployeeService.
  *
+ * This bean exposes employee-related operations such as:
+ * - Searching employees
+ * - Creating (persisting) new users
+ * - Deleting employees
+ * - Changing / resetting passwords
+ *
+ * Security:
+ *   Most operations require admin privileges, enforced using helper
+ *   methods requireUser() and requireAdmin().
  */
 @Dependent
 @Stateless
@@ -31,8 +40,14 @@ public class EmployeeManager implements EmployeeService {
     // Helper methods 
 
     /**
-     * Validates the Authorization header, resolves the employee from the token,
-     * or throws a 401 if invalid / missing.
+     * Validates the Authorization header and resolves an Employee from it.
+     *
+     * Expected header format:
+     *     Authorization: Bearer <token>
+     *
+     * @param authHeader the Authorization header supplied by the client
+     * @return the authenticated Employee
+     * @throws WebApplicationException (401) if missing, malformed, or invalid
      */
     private Employee requireUser(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -54,7 +69,11 @@ public class EmployeeManager implements EmployeeService {
     }
 
     /**
-     * Validates that the caller is an authenticated admin user.
+     * Validates that the caller is an authenticated admin.
+     *
+     * @param authHeader the Authorization header
+     * @return the Employee representing the admin caller
+     * @throws WebApplicationException (403) if caller is not an admin
      */
     private Employee requireAdmin(String authHeader) {
         Employee caller = requireUser(authHeader);
@@ -68,7 +87,12 @@ public class EmployeeManager implements EmployeeService {
     }
 
     /**
-     * Utility: find by empNumber by scanning the list from EmployeeRepo.
+     * Helper: find an employee by empNumber by scanning the entire repo list.
+     *
+     * (Repo doesn't expose this directly, so we do a linear search.)
+     *
+     * @param empNumber employee number
+     * @return matching Employee or null if not found
      */
     private Employee findByEmpNumberInternal(int empNumber) {
         for (Employee e : employeeRepo.getEmployees()) {
@@ -81,6 +105,10 @@ public class EmployeeManager implements EmployeeService {
 
     // EmployeeService API 
 
+    /**
+     * Find an employee by numeric employee number.
+     * Admin-only.
+     */
     @Override
     public Employee findByEmpNumber(String authHeader, int empNumber) {
         requireAdmin(authHeader);
@@ -95,6 +123,11 @@ public class EmployeeManager implements EmployeeService {
         return e;
     }
 
+    
+    /**
+     * Find an employee by username.
+     * Admin-only.
+     */
     @Override
     public Employee findByUserName(String authHeader, String userName) {
         requireAdmin(authHeader);
@@ -109,12 +142,28 @@ public class EmployeeManager implements EmployeeService {
         return e;
     }
 
+    /**
+     * Retrieve all employees.
+     * Admin-only.
+     */
     @Override
     public List<Employee> getAll(String authHeader) {
         requireAdmin(authHeader);
         return employeeRepo.getEmployees();
     }
 
+    /**
+     * Create and persist a new Employee (User or Admin).
+     *
+     * Validates:
+     *  - dto is not null
+     *  - userName is required
+     *  - name is required
+     *
+     * Uses dto.isAdmin() to decide whether to instantiate an Admin or User.
+     *
+     * @return a UserDto representation of the saved employee
+     */
     @Override
 	public UserDto persist(String authHeader, UserDto dto) {
 		// Admin-only
@@ -156,6 +205,12 @@ public class EmployeeManager implements EmployeeService {
 	}
 
 
+    /**
+     * Remove an employee by empNumber.
+     * Admin-only.
+     *
+     * Prevents an admin from deleting themselves.
+     */
     @Override
     public void remove(String authHeader, int empNumber) {
         Employee caller = requireAdmin(authHeader);
@@ -179,6 +234,12 @@ public class EmployeeManager implements EmployeeService {
         employeeRepo.deleteEmployee(toDelete);
     }
 	
+    /**
+     * Reset the password for a given user.
+     * Admin-only.
+     *
+     * The password is reset to the default literal: "password".
+     */
 	@Override
 	public void resetPassword(String authHeader, String userName) {
 		requireAdmin(authHeader);
@@ -201,6 +262,13 @@ public class EmployeeManager implements EmployeeService {
 		employeeRepo.changePassword(userName, "password");
 	}
 
+	/**
+     * Allows a logged-in user to change **their own** password.
+     *
+     * Restrictions:
+     *  - Only the employee themselves can change their password
+     *  - Request body must contain a "password" field
+     */
 	@Override
 	public void changePassword(String authHeader,
 							String userName,
