@@ -139,7 +139,7 @@ public class EmployeeManager implements EmployeeService {
 		emp.setEmpNumber(dto.getEmpNumber());     // 0 = let repo assign
 		emp.setUserName(dto.getUserName().trim());
 	
-		// Persist via your existing repo (enforces unique username/empNumber, sets role)
+		// Persist via existing repo (enforces unique username/empNumber, sets role)
 		employeeRepo.addEmployee(emp);
 		Employee saved = employeeRepo.getEmployee(emp.getUserName());
 		if (saved == null) {
