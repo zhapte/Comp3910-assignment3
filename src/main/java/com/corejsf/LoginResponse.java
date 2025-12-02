@@ -1,6 +1,28 @@
 package com.corejsf;
 
-
+/**
+ * Data Transfer Object (DTO) returned from the POST /api/login endpoint.
+ *
+ * When authentication succeeds, the server issues:
+ *   • a JWT-style token (or random opaque token)
+ *   • basic user information needed by the frontend
+ *
+ * Example JSON response:
+ * <pre>
+ * {
+ *   "token": "abc123xyz",
+ *   "userName": "jdoe",
+ *   "name": "John Doe",
+ *   "empNumber": 42,
+ *   "admin": false
+ * }
+ * </pre>
+ *
+ * The frontend stores the token (e.g., in localStorage) and includes it in the
+ * Authorization header for all subsequent REST calls:
+ *
+ *     Authorization: Bearer <token>
+ */
 public class LoginResponse {
 
     private String token;

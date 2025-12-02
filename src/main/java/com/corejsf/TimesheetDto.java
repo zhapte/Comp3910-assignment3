@@ -8,6 +8,20 @@ import ca.bcit.infosys.timesheet.Timesheet;
 import ca.bcit.infosys.timesheet.TimesheetRow;
 import ca.bcit.infosys.employee.Employee;
 
+
+/**
+ * Data Transfer Object (DTO) representing a Timesheet.
+ *
+ * This class is a JSON-ready representation of a Timesheet entity used for REST
+ * communication between the backend and frontend. It includes:
+ *   - Timesheet metadata (id, employee info, end date)
+ *   - A list of TimesheetRowDto objects
+ *   - A flag indicating whether the timesheet is currently editable
+ *
+ * Conversion helpers:
+ *   • {@link #fromEntity(Timesheet, Long, boolean)} — converts an entity to a DTO
+ *   • {@link #applyToEntity(Timesheet)} — applies DTO state back into an entity
+ */
 public class TimesheetDto {
 
     private Long id;
@@ -17,6 +31,15 @@ public class TimesheetDto {
     private boolean editable;
     private List<TimesheetRowDto> rows;
 
+    
+    /**
+     * Build a TimesheetDto instance from a Timesheet entity.
+     *
+     * @param ts        the Timesheet entity
+     * @param id        the unique id for this timesheet (from repo or constructed)
+     * @param editable  whether the current user can modify this timesheet
+     * @return a fully-populated TimesheetDto
+     */
     public static TimesheetDto fromEntity(Timesheet ts, Long id, boolean editable) {
         TimesheetDto dto = new TimesheetDto();
         Employee e = ts.getEmployee();
@@ -35,8 +58,16 @@ public class TimesheetDto {
     }
 
     /**
-     * Apply this DTO's state back into an existing Timesheet entity.
-     * Does NOT change the owner employee.
+     * Applies the data contained in this DTO back into an existing Timesheet entity.
+     *
+     * This method:
+     *   • Updates the end date
+     *   • Clears existing rows and rebuilds them from row DTOs
+     *
+     * Note:
+     *   This method does NOT modify the Timesheet's owning Employee.
+     *
+     * @param ts the Timesheet entity to modify
      */
     public void applyToEntity(Timesheet ts) {
         if (endDate != null && !endDate.isBlank()) {

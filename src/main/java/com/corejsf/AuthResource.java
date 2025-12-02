@@ -14,6 +14,18 @@ import ca.bcit.infosys.employee.Credentials;
 import ca.bcit.infosys.employee.Employee;
 
 
+/**
+ * REST resource that provides authentication endpoints:
+ *  - POST /login  → authenticate user and return a token
+ *  - POST /logout → invalidate an existing token
+ *
+ * This class uses:
+ *  - AuthService for validating credentials
+ *  - AuthTokenStore for issuing and tracking tokens
+ *
+ * It is request-scoped since each HTTP request processes authentication
+ * independently.
+ */
 @Path("/")
 @RequestScoped
 @Consumes(MediaType.APPLICATION_JSON)
@@ -26,6 +38,26 @@ public class AuthResource {
     @Inject
     private AuthTokenStore tokenStore;
 
+    /**
+     * POST /login
+     *
+     * Authenticates the user using provided credentials. If authentication
+     * is successful, a token is issued and returned to the caller.
+     *
+     * Request body fields:
+     *   - userName : String
+     *   - password : String
+     *
+     * Response body:
+     *   - token
+     *   - userName
+     *   - name
+     *   - empNumber
+     *   - admin
+     *
+     * @param request a JSON LoginRequest containing userName and password
+     * @return Response containing a LoginResponse or an ErrorDto
+     */
     @POST
 	@Path("/login")
     public Response login(LoginRequest request) {
@@ -68,6 +100,18 @@ public class AuthResource {
         return Response.ok(resp).build();
     }
 	
+    /**
+     * POST /logout
+     *
+     * Expects an Authorization header:
+     *     Authorization: Bearer <token>
+     *
+     * If present, the token is removed from AuthTokenStore, effectively
+     * terminating the user's authenticated session.
+     *
+     * @param authHeader "Authorization" request header containing a Bearer token
+     * @return JSON response with a logout success message
+     */
 	@POST
 	@Path("/logout")
 	@Produces(MediaType.APPLICATION_JSON)
